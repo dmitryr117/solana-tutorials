@@ -8,7 +8,7 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-solana_program::declare_id!("A2d1jAfAxJ2UruUNN8agCzFgEjx8EGgMFapC7D9PKu2m");
+solana_program::declare_id!("6HMFuUL98HRYtddAnXfVWTp32jdCXSFHGMSSjcZazHZk");
 
 /// Define the type of state stored in accounts
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
