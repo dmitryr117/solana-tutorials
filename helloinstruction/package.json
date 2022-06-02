@@ -1,5 +1,5 @@
 {
-  "name": "helloworld",
+  "name": "helloinstruction",
   "version": "0.0.1",
   "description": "",
   "keywords": [],
@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.43.4",
+    "@solana/buffer-layout": "4.0.0",
+    "buffer": "6.0.3",
     "borsh": "^0.7.0",
     "mz": "^2.7.0",
     "yaml": "^2.1.1"

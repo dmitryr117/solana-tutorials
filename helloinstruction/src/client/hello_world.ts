@@ -14,6 +14,9 @@ import {
 import * as fs from 'mz/fs';
 import * as path from 'path';
 import * as borsh from 'borsh';
+import * as BufferLayout from "@solana/buffer-layout";
+import {Buffer} from "buffer";
+
 
 import {getPayer, getRpcUrl, createKeypairFromFile} from './utils';
 
@@ -48,13 +51,13 @@ const PROGRAM_PATH = path.resolve(__dirname, '../../dist/program');
  *   - `npm run build:program-c`
  *   - `npm run build:program-rust`
  */
-const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloworld.so');
+const PROGRAM_SO_PATH = path.join(PROGRAM_PATH, 'helloinstruction.so');
 
 /**
  * Path to the keypair of the deployed program.
- * This file is created when running `solana program deploy dist/program/helloworld.so`
+ * This file is created when running `solana program deploy dist/program/helloinstruction.so`
  */
-const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloworld-keypair.json');
+const PROGRAM_KEYPAIR_PATH = path.join(PROGRAM_PATH, 'helloinstruction-keypair.json');
 
 /**
  * The state of a greeting account managed by the hello world program
@@ -141,7 +144,7 @@ export async function checkProgram(): Promise<void> {
   } catch (err) {
     const errMsg = (err as Error).message;
     throw new Error(
-      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloworld.so\``,
+      `Failed to read program keypair at '${PROGRAM_KEYPAIR_PATH}' due to error: ${errMsg}. Program may need to be deployed with \`solana program deploy dist/program/helloinstruction.so\``,
     );
   }
 
@@ -150,7 +153,7 @@ export async function checkProgram(): Promise<void> {
   if (programInfo === null) {
     if (fs.existsSync(PROGRAM_SO_PATH)) {
       throw new Error(
-        'Program needs to be deployed with `solana program deploy dist/program/helloworld.so`',
+        'Program needs to be deployed with `solana program deploy dist/program/helloinstruction.so`',
       );
     } else {
       throw new Error('Program needs to be built and deployed');
@@ -198,12 +201,45 @@ export async function checkProgram(): Promise<void> {
 /**
  * Say hello
  */
+interface InsInterface {
+  instruction: number;
+}
+
+interface InsValueInterface extends InsInterface {
+  value: number;
+}
+
+const incInstruction = (): Buffer => {
+  const layout = BufferLayout.struct<InsInterface>([BufferLayout.u8("instruction")]);
+  const data = Buffer.alloc(layout.span);
+  layout.encode({instruction: 0}, data);
+  return data;
+}
+
+const decInstruction = (): Buffer => {
+  const layout = BufferLayout.struct<InsInterface>([BufferLayout.u8("instruction")]);
+  const data = Buffer.alloc(layout.span);
+  layout.encode({instruction: 1}, data);
+  return data;
+}
+
+const setValueInstruction = (value: number): Buffer => {
+  const layout = BufferLayout.struct<InsValueInterface>([
+    BufferLayout.u8("instruction"),
+    BufferLayout.u32("value")
+  ]);
+  const data = Buffer.alloc(layout.span);
+  layout.encode({instruction: 2, value}, data);
+  return data;
+}
+
 export async function sayHello(): Promise<void> {
   console.log('Saying hello to', greetedPubkey.toBase58());
   const instruction = new TransactionInstruction({
     keys: [{pubkey: greetedPubkey, isSigner: false, isWritable: true}],
     programId,
-    data: Buffer.alloc(0), // All instructions are hellos
+    // data: Buffer.alloc(0), // All instructions are hellos
+    data: setValueInstruction(32)
   });
   await sendAndConfirmTransaction(
     connection,

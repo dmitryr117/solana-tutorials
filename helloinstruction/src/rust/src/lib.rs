@@ -8,7 +8,10 @@ use solana_program::{
     pubkey::Pubkey,
 };
 
-solana_program::declare_id!("6HMFuUL98HRYtddAnXfVWTp32jdCXSFHGMSSjcZazHZk");
+mod instruction;
+use crate::instruction::Instruction;
+
+solana_program::declare_id!("BSw8pdw7A7aqXRAsjsuPSRgypnWar1K5B5v5y8Ld8o1A");
 
 /// Define the type of state stored in accounts
 #[derive(BorshSerialize, BorshDeserialize, Debug)]
@@ -24,9 +27,11 @@ entrypoint!(process_instruction);
 pub fn process_instruction(
     program_id: &Pubkey, // Public key of the account the hello world program was loaded into
     accounts: &[AccountInfo], // The account to say hello to
-    _instruction_data: &[u8], // Ignored, all helloworld instructions are hellos
+    instruction_data: &[u8], // Ignored, all helloworld instructions are hellos
 ) -> ProgramResult {
     msg!("Hello World Rust program entrypoint");
+
+    let instruction = Instruction::decode(instruction_data)?;
 
     // Iterating accounts is safer than indexing
     let accounts_iter = &mut accounts.iter();
@@ -42,7 +47,23 @@ pub fn process_instruction(
 
     // Increment and store the number of times the account has been greeted
     let mut greeting_account = GreetingAccount::try_from_slice(&account.data.borrow())?;
-    greeting_account.counter += 1;
+
+    match instruction {
+        Instruction::Increment => {
+            greeting_account.counter += 1;
+        },
+        Instruction::Decrement => {
+            if greeting_account.counter > 0 {
+                greeting_account.counter -= 1;
+            } else {
+                panic!("Negative value not allowed for an unsigned variable.");
+            }
+        },
+        Instruction::SetValue( v ) => {
+            greeting_account.counter = v
+        }
+    }
+
     greeting_account.serialize(&mut &mut account.data.borrow_mut()[..])?;
 
     msg!("Greeted {} time(s)!", greeting_account.counter);
